@@ -23,7 +23,7 @@ cd container-demo
 
 - Download busybox on both nodes
 ```bash
-curl -LO https://github.com/ansilh/Talks/raw/main/cncf-kochi-29apr2023/bins/busybox
+curl -LO https://github.com/ajithsahadevan/container-networking/blob/main/busybox
 ```
 
 - Create symlink for bins on both nodes
@@ -87,3 +87,11 @@ Add default route in both containers
 ```bash
 ip route add default via {subnet}
 ```
+
+
+Create new route
+```bash
+sudo ip route add 10.5.19.0/24 via 10.200.100.20 dev ens18
+sudo ip route add 10.5.20.0/24 via 10.200.100.21 dev ens18
+```
+
