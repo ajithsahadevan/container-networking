@@ -51,7 +51,7 @@ ip link add vethlocal type veth  peer name vethNS
 
 ```bash
 ps -ef |grep '/bin/sh'
-ip link set vethNS netns 1415
+ip link set vethNS netns PID
 ```
 
 - Assign IP address
@@ -64,17 +64,26 @@ ip link set dev vethNS up
 # Inside host
 ip link set dev vethlocal up
 ```
-Follow above steps on second container, but set IP `10.5.19.11`
+Follow above steps on second container, but set IP `10.5.20.10`
 
 - Create Bridge
 ```bash
 # Inside host
 cd ~/container-demo/
 ./busybox brctl addbr cbr0
-./busybox brctl addif cbr0 enp0s8
-./busybox brctl show
 ./busybox brctl addif cbr0 vethlocal
 ip link set dev cbr0 up
 ```
+
+Assign IP address to the bridge
+```bash
+ip addr add 10.5.19.1/24 dev cbr0
+```
 > Note:- Enable promescous mode
 - Test the container network by pinging the container IP from another container
+
+
+Add default route in both containers
+```bash
+ip route add default via {subnet}
+```
