@@ -95,3 +95,8 @@ sudo ip route add 10.5.19.0/24 via 10.200.100.20 dev ens18
 sudo ip route add 10.5.20.0/24 via 10.200.100.21 dev ens18
 ```
 
+Using NAT for outside communication
+```bash
+sudo iptables -t nat -A POSTROUTING -s 10.5.0.0/24 ! -o br0 -j MASQUERADE
+```
+
