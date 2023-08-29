@@ -18,11 +18,8 @@ sudo nsenter --net=/var/run/netns/netns0 bash
 - Create vEth pair and attach to the container (on host)
 ```bash
 sudo ip link add veth0 type veth peer name ceth0
-
 sudo ip link set ceth0 netns netns0
-
 sudo ip link set veth0 up
-
 sudo ip addr add 172.18.0.11/16 dev veth0
 ```
 
@@ -30,22 +27,6 @@ sudo ip addr add 172.18.0.11/16 dev veth0
 ```bash
 ip link set lo up
 ip link set ceth0 upip addr add 172.18.0.10/16 dev ceth0
-```
-
-# From `netns0`, ping root's veth0
-```bash
-$ ping -c 2 172.18.0.11
-PING 172.18.0.11 (172.18.0.11) 56(84) bytes of data.
-64 bytes from 172.18.0.11: icmp_seq=1 ttl=64 time=0.038 ms
-64 bytes from 172.18.0.11: icmp_seq=2 ttl=64 time=0.040 ms
-```
-
-# From root namespace, ping ceth0
-```bash
-$ ping -c 2 172.18.0.10
-PING 172.18.0.10 (172.18.0.10) 56(84) bytes of data.
-64 bytes from 172.18.0.10: icmp_seq=1 ttl=64 time=0.073 ms
-64 bytes from 172.18.0.10: icmp_seq=2 ttl=64 time=0.046 ms
 ```
 
 ### Demo for interconnecting containers with bridge
@@ -64,6 +45,7 @@ $ ip link set lo up
 $ ip link set ceth1 up
 $ ip addr add 172.18.0.20/16 dev ceth1
 ```
+Now in this case from netns1 we cannot reach the host and we cannot reach netns1 from host. However from netns0 we can reach veth1 but still cant reach netns1
 
 - Recreate the 2 containers
 ```bash
@@ -104,4 +86,19 @@ ip addr add 172.18.0.20/16 dev ceth1
 Make sure there is no new routes on the host:
 ```bash
 ip route
+```
+
+- Create a bridge and attach veth0 and veth1 ends to bridge
+```bash
+sudo ip link set veth0 master br0
+sudo ip link set veth1 master br0
+```
+
+- Assign IP address to bridge to get a route on the host routing table
+```bash
+sudo ip addr add 172.18.0.1/16 dev br0
+
+$ ip route
+# ... omitted lines ...
+172.18.0.0/16 dev br0 proto kernel scope link src 172.18.0.1
 ```
