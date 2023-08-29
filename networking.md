@@ -109,4 +109,46 @@ $ ip route
 
 ### Demo for reaching out to the outside world (IP routing and masquerading)
 
-At present in netns0 we are unable to reach host vm's ip 10.200.100.20 as there is no route defined
+At present in netns0 we are unable to reach host vm's ip 10.200.100.20 as there is no routei for that defined. The host cannot reach the containers as well. To establish connection between host and container we need to assign ip to the bridge
+
+```bash
+sudo ip addr add 172.18.0.1/16 dev br0
+```
+
+Once we assigned the IP address to the bridge interface, we got a route on the host routing table.
+
+The container probably also got an ability to ping the bridge interface, but they still cannot reach out to host's ens18. We need to add the default route for containers:
+
+```bash
+#Add the route in both containers
+
+ip route add default via 172.18.0.1
+```
+
+- Now that we have connected containers with host vm, lets connect the containers to outside world. For that ensure packet forwarding is enabled
+
+```bash
+cat /proc/sys/net/ipv4/ip_forward
+```
+
+- To communicate with outside world we need to add a new rule to the nat table of the POSTROUTING chain asking to masquerade all the packets originated in 172.18.0.0/16 network, but not by the bridge interface.
+```bash
+sudo iptables -t nat -A POSTROUTING -s 172.18.0.0/16 ! -o br0 -j MASQUERADE
+```
+
+### Letting the outside world reach out to containers (port publishing)
+
+- Lets start an http server inside one container
+```bash
+python3 -m http.server --bind 172.18.0.10 5000
+```
+
+Now we will be able to access 172.18.0.10:5000 from the host however to access it from outside world we need to publish the container's port 5000 on the host's ens18 interface
+```bash
+# External traffic
+sudo iptables -t nat -A PREROUTING -d 10.0.2.15 -p tcp -m tcp --dport 5000 -j DNAT --to-destination 172.18.0.10:5000
+
+# Local traffic (since it doesn't pass the PREROUTING chain)
+sudo iptables -t nat -A OUTPUT -d 10.0.2.15 -p tcp -m tcp --dport 5000 -j DNAT --to-destination 172.18.0.10:5000
+```
+
