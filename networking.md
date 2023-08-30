@@ -146,9 +146,9 @@ python3 -m http.server --bind 172.18.0.10 5000
 Now we will be able to access 172.18.0.10:5000 from the host however to access it from outside world we need to publish the container's port 5000 on the host's ens18 interface
 ```bash
 # External traffic
-sudo iptables -t nat -A PREROUTING -d 10.0.2.15 -p tcp -m tcp --dport 5000 -j DNAT --to-destination 172.18.0.10:5000
+sudo iptables -t nat -A PREROUTING -d 10.200.100.20 -p tcp -m tcp --dport 5000 -j DNAT --to-destination 172.18.0.10:5000
 
 # Local traffic (since it doesn't pass the PREROUTING chain)
-sudo iptables -t nat -A OUTPUT -d 10.0.2.15 -p tcp -m tcp --dport 5000 -j DNAT --to-destination 172.18.0.10:5000
+sudo iptables -t nat -A OUTPUT -d 10.200.100.20 -p tcp -m tcp --dport 5000 -j DNAT --to-destination 172.18.0.10:5000
 ```
 
