@@ -6,24 +6,24 @@
 
 - Create network namespace 
 ```bash
-sudo ip netns add ctid1
+sudo ip netns add netns0
 ip netns
 ``` 
 
 - Enter into the newly created namespace
 ```bash
-sudo nsenter --net=/var/run/netns/ctid1 bash
+sudo nsenter --net=/var/run/netns/netns0 bash
 ```
 
 - Create vEth pair and attach to the container (on host)
 ```bash
 sudo ip link add veth0 type veth peer name ceth0
-sudo ip link set ceth0 netns ctid1
+sudo ip link set ceth0 netns netns0
 sudo ip link set veth0 up
 sudo ip addr add 172.18.0.11/16 dev veth0
 ```
 
-- on ctid1
+- on netns0
 ```bash
 ip link set lo up
 ip link set ceth0 up
@@ -35,23 +35,23 @@ ip addr add 172.18.0.10/16 dev ceth0
 - Create a second container
 ```bash
 # From root namespace
-sudo ip netns add ctid2
+sudo ip netns add netns1
 sudo ip link add veth1 type veth peer name ceth1
-sudo ip link set ceth1 netns ctid2
+sudo ip link set ceth1 netns netns1
 sudo ip link set veth1 up
 sudo ip addr add 172.18.0.21/16 dev veth1
 
-# From ctid2 
+# From netns1 
 ip link set lo up
 ip link set ceth1 up
 ip addr add 172.18.0.20/16 dev ceth1
 ```
-Now in this case from ctid2 we cannot reach the host and we cannot reach netns1 from host. However from ctid1 we can reach veth1 but still cant reach netns1
+Now in this case from netns1 we cannot reach the host and we cannot reach netns1 from host. However from netns0 we can reach veth1 but still cant reach netns1
 
 - Recreate the 2 containers
 ```bash
-sudo ip netns delete ctid1
-sudo ip netns delete ctid2
+sudo ip netns delete netns0
+sudo ip netns delete netns1
 
 # But if you still have some leftovers...
 sudo ip link delete veth0
@@ -62,23 +62,23 @@ sudo ip link delete ceth1
 
 ```bash
 # On host vm
-sudo ip netns add ctid1
+sudo ip netns add netns0
 sudo ip link add veth0 type veth peer name ceth0
 sudo ip link set veth0 up
-sudo ip link set ceth0 netns ctid1
+sudo ip link set ceth0 netns netns0
 
-sudo ip netns add ctid2
+sudo ip netns add netns1
 sudo ip link add veth1 type veth peer name ceth1
 sudo ip link set veth1 up
-sudo ip link set ceth1 netns ctid2
+sudo ip link set ceth1 netns netns1
 
-# On ctid1
+# On netns0
 ip link set lo up
 ip link set ceth0 up
 ip addr add 172.18.0.10/16 dev ceth0
 
 
-# On ctid2
+# On netns1
 ip link set lo up
 ip link set ceth1 up
 ip addr add 172.18.0.20/16 dev ceth1
@@ -109,7 +109,7 @@ $ ip route
 
 ### Demo for reaching out to the outside world (IP routing and masquerading)
 
-At present in ctid1 we are unable to reach host vm's ip 10.200.100.20 as there is no routei for that defined. The host cannot reach the containers as well. To establish connection between host and container we need to assign ip to the bridge
+At present in netns0 we are unable to reach host vm's ip 10.200.100.20 as there is no routei for that defined. The host cannot reach the containers as well. To establish connection between host and container we need to assign ip to the bridge
 
 ```bash
 sudo ip addr add 172.18.0.1/16 dev br0
